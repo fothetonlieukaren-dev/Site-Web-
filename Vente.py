@@ -5,69 +5,45 @@ from datetime import datetime
 
 st.set_page_config(page_title="Café-Blitz", page_icon="☕")
 
-# === ACCUEIL ===
-st.markdown("# ☕ Café-Blitz 🍛")
-st.markdown("*Venez savourer nos délicieux plats et boissons !*")
+st.markdown("# ☕ Café-Blitz")
+st.caption("Venez savourer nos plats et boissons")
 
-# === FICHIER ===
+# Fichier
 fichier = "ventes.csv"
 
-# Charger les données
+# Charger ou créer les données
 if os.path.exists(fichier):
     df = pd.read_csv(fichier)
 else:
-    df = pd.DataFrame(columns=["date", "produit", "qte", "prix"])
+    df = pd.DataFrame(columns=["produit", "qte"])
 
-# === FORMULAIRE SIMPLE ===
+# Formulaire
 st.subheader("📝 Enregistrer une vente")
 
-with st.form("vente"):
-    col1, col2 = st.columns(2)
-    with col1:
-        produit = st.selectbox("Produit", [
-            "Nouilles sautées", "Riz sauté", "Frit plantain", 
-            "Frit pomme", "Pain-oeuf", "Café noir", "Café au lait",
-            "Jus d'orange", "Jus de bissap", "Soda"
-        ])
-        qte = st.number_input("Quantité", 1, 20, 1)
-    with col2:
-        prix = st.number_input("Prix (F CFA)", 100, 2000, 500)
-    
-    if st.form_submit_button("✅ Enregistrer"):
-        nouvelle = pd.DataFrame([{
-            "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "produit": produit,
-            "qte": qte,
-            "prix": prix
-        }])
-        df = pd.concat([df, nouvelle], ignore_index=True)
-        df.to_csv(fichier, index=False)
-        st.success(f"✅ {qte} {produit} ajouté")
-        st.rerun()
+produit = st.selectbox("Produit", ["Nouilles sautées", "Riz sauté", "Frit plantain", "Frit pomme", "Pain-oeuf", "Café", "Jus"])
+qte = st.number_input("Quantité", min_value=1, step=1, value=1)
 
-# === ANALYSE SIMPLE ===
+if st.button("✅ Enregistrer"):
+    nouvelle_ligne = pd.DataFrame({"produit": [produit], "qte": [qte]})
+    df = pd.concat([df, nouvelle_ligne], ignore_index=True)
+    df.to_csv(fichier, index=False)
+    st.success(f"{qte} x {produit} ajouté !")
+    st.rerun()
+
+# Analyse
+st.subheader("📊 Ce qui marche le mieux")
+
 if len(df) > 0:
-    df["total"] = df["qte"] * df["prix"]
+    top = df.groupby("produit")["qte"].sum().sort_values(ascending=False)
     
-    st.subheader("📊 Ce qui marche le mieux")
+    for i, (p, q) in enumerate(top.head(3).items(), 1):
+        st.write(f"**{i}. {p}** → {q} vendus")
     
-    # Top produits
-    top = df.groupby("produit")["qte"].sum().sort_values(ascending=False).head(3)
+    meilleur = top.index[0]
+    st.success(f"💡 Conseil : {meilleur} est ton meilleur produit !")
     
-    col1, col2, col3 = st.columns(3)
-    for i, (produit, qte) in enumerate(top.items()):
-        with [col1, col2, col3][i]:
-            st.metric(f"🏆 N°{i+1}", produit, f"{qte} vendus")
-    
-    # Petit conseil
-    meilleur = top.index[0] if len(top) > 0 else "rien"
-    st.info(f"💡 **Conseil :** {meilleur} est ton meilleur produit → mets-le en avant !")
-    
-    # Total CA
-    st.metric("💰 Chiffre d'affaires total", f"{df['total'].sum():,.0f} F")
-    
-    # Dernières ventes
-    with st.expander("📜 Dernières ventes"):
-        st.dataframe(df[["date", "produit", "qte", "prix"]].tail(10))
+    total = df["qte"].sum()
+    st.metric("Total produits vendus", total)
 else:
-    st.info("📭 Aucune vente. Enregistre ta première vente !")
+    st.info("Aucune vente pour le moment. Enregistre ta première vente !")
+
