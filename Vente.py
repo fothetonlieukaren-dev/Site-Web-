@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import os
-from datetime import datetime
 
 st.set_page_config(page_title="Café-Blitz", page_icon="☕")
 
@@ -31,9 +30,8 @@ if st.button("✅ Enregistrer"):
     st.rerun()
 
 # Analyse
-st.subheader("📊 Ce qui marche le mieux")
-
 if len(df) > 0:
+    st.subheader("📊 Les produits les plus vendus")
     top = df.groupby("produit")["qte"].sum().sort_values(ascending=False)
     
     for i, (p, q) in enumerate(top.head(3).items(), 1):
@@ -45,5 +43,4 @@ if len(df) > 0:
     total = df["qte"].sum()
     st.metric("Total produits vendus", total)
 else:
-    st.info("Aucune vente pour le moment. Enregistre ta première vente !")
-
+    st.info("Ajoute ta première vente ci-dessus 👆")
